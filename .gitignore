@@ -1,0 +1,16 @@
+# Entorno virtual
+.venv/
+env/
+
+# Archivos de caché de Python
+__pycache__/
+*.pyc
+
+# Ajustes de VS Code y SO
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Datasets pesados en local
+data/raw/*.csv
+data/processed/*.csv
