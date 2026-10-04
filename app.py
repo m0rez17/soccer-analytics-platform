@@ -56,3 +56,29 @@ if player_1 and player_2:
 
     # Renderizar el gráfico en la interfaz
     st.pyplot(fig)
+
+    # Seleccionamos, dentro de la posición comparada, los valores originales por 90 minutos
+    # de cada jugador para las mismas métricas que se representaron en el radar.
+    player_1_values = df.loc[
+        (df["Primary_Pos"] == position) & (df["Player"] == player_1), METRICS
+    ].iloc[0]
+    player_2_values = df.loc[
+        (df["Primary_Pos"] == position) & (df["Player"] == player_2), METRICS
+    ].iloc[0]
+
+    # Convertimos las dos series en una tabla con una fila por métrica y una columna
+    # por jugador; añadimos la diferencia con signo positivo cuando player_1 supera a player_2.
+    comparison_df = pd.DataFrame(
+        [player_1_values, player_2_values], index=[player_1, player_2]
+    ).T
+    comparison_df["Diferencia"] = comparison_df.iloc[:, 0] - comparison_df.iloc[:, 1]
+
+    # Redondeamos a dos decimales para facilitar la lectura y damos un nombre explícito
+    # al índice, que contiene las métricas comparadas.
+    comparison_df = comparison_df.round(2)
+    comparison_df.index.name = "Métrica"
+
+    # Mostramos debajo del radar la comparación de los valores reales por 90 minutos,
+    # aprovechando todo el ancho disponible en la página.
+    st.subheader("Valores reales por 90 minutos")
+    st.dataframe(comparison_df, use_container_width=True)
