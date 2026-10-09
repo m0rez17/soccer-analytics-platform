@@ -18,13 +18,54 @@ def load_data():
 
 df = load_data()
 
-# Métricas del modelo táctico
-METRICS = ["PasTotCmp%", "PasProg", "CarPrgDist", "Tkl+Int", "Recov", "ScaPassLive"]
+# Conjuntos tácticos de seis métricas para que cada radar compare dimensiones
+# relevantes para el rol seleccionado, manteniendo el mismo número de ejes.
+# En defensa se priorizan la salida progresiva, la seguridad en el pase y la
+# recuperación del balón; el volumen de conducción y las acciones de creación
+# con pase en juego abierto completan el perfil con balón.
+POSITION_METRICS = {
+    "DF": [
+        "PasProg",
+        "PasTotCmp%",
+        "Tkl+Int",
+        "Recov",
+        "CarPrgDist",
+        "ScaPassLive",
+    ],
+    # En el medio campo, la combinación de precisión y progresión del pase,
+    # conducción y creación describe la distribución, mientras las entradas,
+    # intercepciones y recuperaciones reflejan la contribución defensiva.
+    "MF": [
+        "PasTotCmp%",
+        "PasProg",
+        "CarPrgDist",
+        "ScaPassLive",
+        "Tkl+Int",
+        "Recov",
+    ],
+    # Para los delanteros se destaca la creación de ocasiones con pase y la
+    # conducción, junto con progresión, precisión y métricas de recuperación
+    # que permiten comparar también su participación en la presión.
+    "FW": [
+        "ScaPassLive",
+        "CarPrgDist",
+        "PasProg",
+        "PasTotCmp%",
+        "Recov",
+        "Tkl+Int",
+    ],
+}
 
 # 1. Filtro de posición en la barra lateral
 st.sidebar.header("Filtros")
 positions = sorted(df["Primary_Pos"].dropna().unique().tolist())
 position = st.sidebar.selectbox("Posición", positions)
+
+# La posición elegida determina las seis métricas que recorren todo el flujo:
+# se usan tanto para construir los ejes del radar como para extraer sus valores
+# originales en la tabla; posiciones desconocidas heredan el perfil equilibrado
+# de mediocampo para que ambas visualizaciones sigan mostrando las mismas métricas.
+selected_metrics = POSITION_METRICS.get(position, POSITION_METRICS["MF"])
 
 # 2. Filtrar lista de jugadores disponibles para esa posición
 df_pos = df[df["Primary_Pos"] == position]
@@ -50,7 +91,7 @@ if player_1 and player_2:
         player1=player_1,
         player2=player_2,
         position=position,
-        metrics=METRICS,
+        metrics=selected_metrics,
         title=f"{player_1} vs {player_2} ({position})",
     )
 
@@ -58,12 +99,13 @@ if player_1 and player_2:
     st.pyplot(fig)
 
     # Seleccionamos, dentro de la posición comparada, los valores originales por 90 minutos
-    # de cada jugador para las mismas métricas que se representaron en el radar.
+    # de cada jugador para exactamente el conjunto táctico activo en el radar; así,
+    # la tabla no introduce métricas adicionales ni omite ningún eje comparado.
     player_1_values = df.loc[
-        (df["Primary_Pos"] == position) & (df["Player"] == player_1), METRICS
+        (df["Primary_Pos"] == position) & (df["Player"] == player_1), selected_metrics
     ].iloc[0]
     player_2_values = df.loc[
-        (df["Primary_Pos"] == position) & (df["Player"] == player_2), METRICS
+        (df["Primary_Pos"] == position) & (df["Player"] == player_2), selected_metrics
     ].iloc[0]
 
     # Convertimos las dos series en una tabla con una fila por métrica y una columna
